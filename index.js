@@ -41,7 +41,61 @@ function randomInt(n) {
     return Math.floor(Math.random() * n);
 }
 
+function setGeometry(gl, positionAttributeLocation) {
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const positions = new Float32Array([
+        0, 0,
+        200, 0,
+        200, 200,
+        200, 200,
+        0, 200,
+        0, 0,
+    ]);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+}
+
+function setTexCoords(gl, texCoordAttributeLocation) {
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    const texCoords = new Float32Array([
+        0, 0,
+        1, 0,
+        1, 1,
+        1, 1,
+        0, 1,
+        0, 0,
+    ]);
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(texCoordAttributeLocation);
+    gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+}
+
+function setTexture(gl, image) {
+    const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+}
+
+async function loadImage(url) {
+    const image = new Image();
+    image.src = url;
+    return new Promise((resolve, reject) => {
+        image.onload = () => {
+            resolve(image);
+        };
+    });
+}
+
 async function main() {
+    const image = await loadImage("1.jpg");
     const vertexShaderSource = await loadText("vertex.glsl");
     const fragmentShaderSource = await loadText("fragment.glsl");
 
@@ -54,21 +108,16 @@ async function main() {
     const program = createProgram(gl, vertexShader, fragmentShader);
 
     const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+    const texCoordAttributeLocation = gl.getAttribLocation(program, "a_texCoord");
     const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-    const colorUniformLocation = gl.getUniformLocation(program, "u_color");
+    const imageUniformLocation = gl.getUniformLocation(program, "u_image");
 
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    const positions = new Float32Array([
-        0, 0,
-        666, 0,
-        0, 233,
-    ]);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
-    gl.enableVertexAttribArray(positionAttributeLocation);
-    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+    setGeometry(gl, positionAttributeLocation);
+    setTexCoords(gl, texCoordAttributeLocation);
+    setTexture(gl, image);
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -81,19 +130,9 @@ async function main() {
 
     gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
 
-    for (let i = 0; i < 1; i++) {
-        setRectangle(
-            gl,
-            100,
-            100,
-            1000,
-            1000,
-        );
+    gl.uniform1i(imageUniformLocation, 0);
 
-        gl.uniform4f(colorUniformLocation, Math.random(), Math.random(), Math.random(), 1);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
 main();
