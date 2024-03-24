@@ -26,6 +26,21 @@ function createProgram(gl, vertexShader, fragmentShader) {
     return program;
 }
 
+function setRectangle(gl, x, y, width, height) {
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        x, y,
+        x + width, y,
+        x + width, y + height,
+        x, y,
+        x + width, y + height,
+        x, y + height,
+    ]), gl.STATIC_DRAW);
+}
+
+function randomInt(n) {
+    return Math.floor(Math.random() * n);
+}
+
 async function main() {
     const vertexShaderSource = await loadText("vertex.glsl");
     const fragmentShaderSource = await loadText("fragment.glsl");
@@ -39,16 +54,17 @@ async function main() {
     const program = createProgram(gl, vertexShader, fragmentShader);
 
     const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+    const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+    const colorUniformLocation = gl.getUniformLocation(program, "u_color");
 
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = new Float32Array([
         0, 0,
-        0, 0.5,
-        0.7, 0,
+        666, 0,
+        0, 233,
     ]);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     gl.enableVertexAttribArray(positionAttributeLocation);
@@ -56,11 +72,28 @@ async function main() {
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
+    gl.clearColor(0, 0, 0, 255);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     gl.useProgram(program);
 
     gl.bindVertexArray(vao);
 
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
+
+    for (let i = 0; i < 1; i++) {
+        setRectangle(
+            gl,
+            100,
+            100,
+            1000,
+            1000,
+        );
+
+        gl.uniform4f(colorUniformLocation, Math.random(), Math.random(), Math.random(), 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
 }
 
 main();
